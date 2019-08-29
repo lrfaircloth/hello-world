@@ -1,0 +1,74 @@
+# Center of Gravity script for annotated files
+# by Laura Faircloth
+
+
+form Get Intensity
+	sentence Directory ./file
+	comment If you want to analyze all the files, leave this blank
+	word Base_file_name 
+	comment Which tier do you want to analyze?
+	integer Tier 1
+	comment The name of result file 
+	text textfile results.txt
+endform
+
+#Print out a line with the names for the different entries. These are the categories I'll be using, prints out columns
+
+fileappend 'textfile$' 'tab$' filename 'tab$' gravity 'newline$'
+
+#Read all files in a folder, identifies all of the things in a file textgrid and wave 
+
+Create Strings as file list... wavlist 'directory$'/'base_file_name$'*.wav
+Create Strings as file list... gridlist 'directory$'/'base_file_name$'*.TextGrid
+n = Get number of strings
+
+for i to n
+clearinfo
+
+# tier information
+select Strings wavlist
+	filename$ = Get string... i
+	Read from file... 'directory$'/'filename$'
+	soundname$ = selected$ ("Sound")
+
+select Strings gridlist
+	gridname$ = Get string... i
+	Read from file... 'directory$'/'gridname$'
+	int = Get number of intervals... tier
+
+# cycle through textgrids in the soundfile you've selected
+
+for k from 1 to 'int'
+	select TextGrid 'soundname$'
+	label$ = Get label of interval... tier 'k'
+	if label$ <> ""
+
+# need to keep the above and below together or it doesnt select the file
+select Sound 'soundname$'
+plus TextGrid 'soundname$'
+# 2 to 1
+Extract non-empty intervals... tier "no"
+
+# now the problem is here, need to select the sound that has just been created
+select Sound 'label$'
+
+To Spectrum: "yes"
+#select Spectrum 'soundname$'
+
+# don't change the number
+cog = Get centre of gravity: tier$
+
+# enters the numbers
+		resultline$ = "'soundname$' 'tab$' 'label$' 'tab$' 'cog' 'newline$'"
+	        fileappend "'textfile$'" 'resultline$'
+	endif
+endfor
+
+endfor
+
+# clean up
+
+select all
+Remove
+
+
